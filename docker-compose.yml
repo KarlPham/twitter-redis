@@ -1,0 +1,54 @@
+services:
+    postgres_primary:
+      image: postgres:17
+      container_name: postgres_primary
+      environment:
+        POSTGRES_USER: admin
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: minitwitter
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_primary_data:/var/lib/postgresql/data
+        - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U admin -d minitwitter"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+
+
+    postgres_replica:
+      image: postgres:17
+      container_name: postgres_replica
+      environment:
+        POSTGRES_USER: admin
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: minitwitter
+      ports:
+        - "5433:5432"
+      volumes:
+        - postgres_replica_data:/var/lib/postgresql/data
+        - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U admin -d minitwitter"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+
+    redis:
+      image: redis:8.4-alpine
+      container_name: redis
+      ports:
+        - "6379:6379"
+      command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 5s
+        timeout: 3s
+        retries: 5
+
+
+volumes:
+  postgres_primary_data:
+  postgres_replica_data:
