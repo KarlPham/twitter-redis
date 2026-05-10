@@ -50,7 +50,7 @@ async def login(body: LoginRequest):
       3. Return JWT
     """
     # 1. Find user — read from replica
-    db = get_replica()
+    db = get_primary()
     user = await db.fetchrow(
         "SELECT id, password_hash FROM users WHERE username = $1",
         body.username,
@@ -58,7 +58,7 @@ async def login(body: LoginRequest):
 
     # Use generic message — don't reveal whether username exists
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="User is not found")
 
     # 2. Verify password
     if not verify_password(body.password, user["password_hash"]):
